@@ -1,0 +1,3 @@
+ACADEMIC_PERFORMANCE = 'УСП'
+QUALITY = 'КАЧ'
+AVERAGE_GRADE = 'СОУ'

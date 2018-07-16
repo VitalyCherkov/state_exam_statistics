@@ -1,0 +1,28 @@
+<table class="table">
+    <thead class="table__header">
+        <tr>{% for column_header in table.header %}
+            <th class="table__column-header">
+                {{ column_header }}
+            </th>
+        {% endfor %}</tr>
+    </thead>
+    <tbody>
+        {% for table_row in table.rows %}
+            <tr class="table__row">
+
+                {% for table_cell in table_row %}
+                    <td><div class="table__cell">
+                        {% if table_cell != "nan" %}
+                            {{ table_cell }}
+                        {% else %}
+
+                        {% endif %}
+                    </div></td>
+                {% endfor %}
+
+            </tr>
+        {% endfor %}
+    </tbody>
+
+
+</table>

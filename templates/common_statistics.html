@@ -1,0 +1,13 @@
+<div class="common-statistics">
+    {% for key, value in common_statistics.common.items %}
+        <div class="common-statistics__item">
+            <div class="common-statistics__header">
+                {{ key }}
+            </div>
+            <div class="common-statistics__value">
+                {{ value }}%
+            </div>
+        </div>
+    {% endfor %}
+
+</div>
