@@ -8,12 +8,11 @@ engine = Engine(
 )
 
 
-def get_html(context):
+def get_html(context, output_name='../export/output.html'):
     template = engine.get_template('base.html')
     rendered = template.render(context)
-    # print(rendered)
 
-    with open('../export/output.html', 'w+') as f:
+    with open(output_name, 'w+') as f:
         f.write(rendered)
 
     return rendered

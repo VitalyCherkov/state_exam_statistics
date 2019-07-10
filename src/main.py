@@ -10,6 +10,7 @@ from src.table_separation import get_merged_table
 from src.templator import get_html
 
 
+# Читает файл и преобразует таблицу в массив колонок
 def read_file(file_name, col_names):
     raw_data = pandas.read_csv(file_name, header=0, index_col=col_names[ID])
     selected_cols = [raw_data[col] for col in raw_data]
@@ -17,6 +18,7 @@ def read_file(file_name, col_names):
     return selected_df
 
 
+# Создает колонку в формате Фамилия И.О.
 def get_full_names_col(table, col_names):
     name_col = table[col_names[NAME]].apply(lambda x: '{0}.'.format(x[0]))
     patronumic_col = table[col_names[PATRONYMIC]].apply(lambda x: '{0}.'.format(x[0]))
@@ -26,7 +28,6 @@ def get_full_names_col(table, col_names):
 
 
 def append_row(table, row, title=None):
-
     if title:
         row = [title] + row
 
@@ -79,10 +80,21 @@ def get_final_calculations(table, col_names):
         raw_score_df,
         final_score_df
     ], axis=1)
+
     final_table = final_table.sort_values(by=[
         col_names[SCHOOL_CODE],
         NAME_COLUMN_TITLE
     ])
+    final_table = final_table.reset_index(drop=True)
+
+    # Добавляем колонку с индексами
+    indexes = [*range(final_table.shape[0] + 1)][1:]
+    indexes = get_pd_col_as_df(title='№', data=indexes)
+
+    final_table = pandas.concat([
+        indexes,
+        final_table,
+    ], axis=1)
 
     return final_table, tasks_statistics
 
@@ -99,10 +111,7 @@ def get_marks_stats(table, col_names):
     return counts
 
 
-def get_statistics_9th_grade():
-    col_names = get_default_cоlumn_names(9)
-    table = read_file(file_name='../data/9_geo.csv', col_names=col_names)
-
+def get_statistics_9th_grade(col_names, table):
     final_table, tasks_statistics = get_final_calculations(table, col_names)
 
     common_statistics = {
@@ -113,14 +122,21 @@ def get_statistics_9th_grade():
     return final_table, tasks_statistics, common_statistics
 
 
-def get_statistics_11th_grade():
-    col_names = get_default_cоlumn_names(11)
-    table = read_file(file_name='../data/11_geo.csv', col_names=col_names)
+def get_statistics_11th_grade(col_names, table):
 
     final_table, tasks_statistics = get_final_calculations(table, col_names)
     return final_table, tasks_statistics, {}
 
 
+def prepare_data_frames(grade, file_name):
+    col_names = get_default_cоlumn_names(grade)
+    table = read_file(file_name=file_name, col_names=col_names)
+    func = get_statistics_9th_grade if grade == 9 else get_statistics_11th_grade
+    return col_names, table, func
+
+
+# Преобразует таблицу к объекту из массива заголовок и массива строк,
+# где строка - массив ячеек
 def prepare_final_table_context(table):
     return {
         'header': [str(item) for item in list(table.columns)],
@@ -131,6 +147,7 @@ def prepare_final_table_context(table):
     }
 
 
+# Создает контекст для рендера шаблоном
 def prepare_context(final_table, tasks_statistics, common_statistics=None):
     return Context({
         'students_table': prepare_final_table_context(final_table),
@@ -139,11 +156,30 @@ def prepare_context(final_table, tasks_statistics, common_statistics=None):
     })
 
 
-def main():
-    print('11th')
-    results = get_statistics_11th_grade()
+def doProgram(grade, file_name):
+    col_names, table, func = prepare_data_frames(grade, file_name)
+
+    school_col = col_names[SCHOOL_CODE]
+    school_codes = table[school_col].unique()
+    table_list_by_school = [
+        table[table[school_col] == code]
+        for code in school_codes
+    ]
+
+    for index, school_table in enumerate(table_list_by_school):
+        school_results = func(col_names, school_table)
+        context = prepare_context(*school_results)
+        report_name = '../export/отчет_{}_{}.html'.format(grade, school_codes[index])
+        get_html(context, report_name)
+
+    results = func(col_names, table)
     context = prepare_context(*results)
-    get_html(context)
+    get_html(context, '../export/отчет_{}_общий.html'.format(grade))
+
+
+def main():
+    doProgram(9, '../data/9_2019.csv')
+    doProgram(11, '../data/11_2019_1.csv')
 
 
 main()
